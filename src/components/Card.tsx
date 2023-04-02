@@ -6,11 +6,11 @@ import Draggable from "gsap/dist/Draggable";
 gsap.registerPlugin(Draggable);
 
 const Card = ({ setStartProximity, setStartRead }: any) => {
-  const cardRef = useRef(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const isDragging = useRef(false);
-  const imageRef = useRef(null);
-  const textRef = useRef(null);
-  const descriptionRef = useRef(null);
+  const imageRef = useRef<HTMLDivElement | null>(null);
+  const textRef = useRef<HTMLDivElement | null>(null);
+  const descriptionRef = useRef<HTMLDivElement | null>(null);
 
   const readAnimation = () => {
     const tl = gsap.timeline();
@@ -169,7 +169,7 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
       ease: "power3.out",
     });
   }, []);
-  const onMouseMove = (event) => {
+  const onMouseMove = (event: MouseEvent) => {
     if (isDragging.current) {
       return;
     }
@@ -203,13 +203,16 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
 
   useEffect(() => {
     const cardElement = cardRef.current;
-    cardElement.addEventListener("mousemove", onMouseMove);
-    cardElement.addEventListener("mouseleave", onMouseLeave);
 
-    return () => {
-      cardElement.removeEventListener("mousemove", onMouseMove);
-      cardElement.removeEventListener("mouseleave", onMouseLeave);
-    };
+    if (cardElement) {
+      cardElement.addEventListener("mousemove", onMouseMove);
+      cardElement.addEventListener("mouseleave", onMouseLeave);
+
+      return () => {
+        cardElement.removeEventListener("mousemove", onMouseMove);
+        cardElement.removeEventListener("mouseleave", onMouseLeave);
+      };
+    }
   }, []);
   return (
     <div
