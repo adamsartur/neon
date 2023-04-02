@@ -13,6 +13,7 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
   const descriptionRef = useRef<HTMLDivElement | null>(null);
 
   const readAnimation = () => {
+    console.log("readAnimation");
     const tl = gsap.timeline();
     tl.add([
       gsap.to(imageRef.current, {
@@ -89,6 +90,7 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
   };
 
   useEffect(() => {
+    console.log("draggable creating");
     if (cardRef.current) {
       Draggable.create(cardRef.current, {
         bounds: { minY: 0, maxY: 100, minX: 500, maxX: 0 },
@@ -145,6 +147,7 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
 
   const handleClick = () => {};
 
+  console.log("init?");
   useEffect(() => {
     // gsap.from(cardRef.current, {
     //   duration: 2,
@@ -175,6 +178,7 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
     const tiltX = (yPos - 0.5) * 30;
     const tiltY = (xPos - 0.5) * -30;
 
+    console.log("tiltenter");
     gsap.to(cardRef.current, {
       duration: 0.5,
       rotateX: tiltX,
@@ -186,6 +190,7 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
   };
 
   const onMouseLeave = () => {
+    console.log("tiltleave");
     gsap.to(cardRef.current, {
       duration: 0.5,
       rotateX: 0,
