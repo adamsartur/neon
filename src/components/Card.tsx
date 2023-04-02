@@ -139,13 +139,6 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
             readAnimation();
           }
         },
-        liveSnap: {
-          points: [
-            { x: 0, y: 0 },
-            { x: 0, y: 60 },
-          ],
-          radius: 15,
-        },
       });
     }
   }, [cardRef]);
@@ -153,13 +146,13 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
   const handleClick = () => {};
 
   useEffect(() => {
-    gsap.from(cardRef.current, {
-      duration: 2,
-      y: -1200,
-      opacity: 1,
-      immediateRender: true,
-      ease: "power3.out",
-    });
+    // gsap.from(cardRef.current, {
+    //   duration: 2,
+    //   y: -1200,
+    //   opacity: 1,
+    //   immediateRender: true,
+    //   ease: "power3.out",
+    // });
     gsap.to(cardRef.current, {
       duration: 2,
       delay: 3,
