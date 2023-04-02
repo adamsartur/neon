@@ -82,7 +82,7 @@ const Card = ({ setStartProximity, setStartRead }: any) => {
     });
   };
 
-  const onStop = (event, data) => {
+  const onStop = (event: MouseEvent, data: { y: number }) => {
     if (data.y > 500) {
       data.y = 500;
     }
