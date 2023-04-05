@@ -21,7 +21,7 @@ module.exports = {
         xs: "450px",
       },
       backgroundImage: {
-        "hero": "url('/assets/herobg.png')",
+        "hero": "url('/assets/start.png')",
         "background2": "url('/assets/bg2.png')",
         "background3": "url('/assets/bg3.png')",
         "background4": "url('/assets/bg4.png')",

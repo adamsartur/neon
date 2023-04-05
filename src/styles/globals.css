@@ -171,6 +171,10 @@ a {
 .intro {
   animation: intro 4s ease-in-out forwards;
 }
+
+.start {
+}
+
 @keyframes zoom-out {
   0% {
     background-size: 800% 800%;
@@ -513,6 +517,21 @@ a {
   border-image: linear-gradient(to right, green, white) 1;
 }
 .reader-img {
+  pointer-events: none;
+}
+.reader-container {
   transform: rotate(-6deg);
   pointer-events: none;
+  perspective: 150px;
+}
+.reader-panel {
+  transform: rotateY(-20deg);
+  background: #001800;
+}
+
+.screen-text {
+  pointer-events: none;
+  position: absolute;
+  user-select: none;
+  top: 30%;
 }
