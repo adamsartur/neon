@@ -27,6 +27,16 @@ export default function Home() {
   const handleClick = () => {
     console.log("olar");
     setIsRunning(!isRunning);
+
+    // Get the DOM elements
+    const heroElement = document.querySelector(".bg-hero");
+    const h1Element = document.querySelector(".screen-text");
+
+    // Add a class to the hero element to start the animation
+    heroElement && heroElement.classList.toggle("bg-black");
+
+    // Remove the "glow" class from the h1 element
+    h1Element && h1Element.classList.toggle("flickering");
   };
 
   return (
