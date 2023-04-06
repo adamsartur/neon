@@ -11,6 +11,10 @@ import {
 } from "next/font/google";
 import React, { useState } from "react";
 import Dot3D from "@/components/DotLines";
+import { gsap } from "gsap";
+import { TextPlugin } from "gsap/dist/TextPlugin";
+
+gsap.registerPlugin(TextPlugin);
 
 const inter = Inter({ subsets: ["latin"] });
 const pacifico = Pacifico({ subsets: ["latin"], weight: ["400"] });
@@ -24,19 +28,37 @@ export default function Home() {
   const [isRunning, setIsRunning] = useState(false);
   const [startProximity, setStartProximity] = useState(null);
   const [startRead, setStartRead] = useState(null);
+
+  gsap.registerPlugin(TextPlugin);
   const handleClick = () => {
     console.log("olar");
-    setIsRunning(!isRunning);
-
     // Get the DOM elements
     const heroElement = document.querySelector(".bg-hero");
+    const canvasContainerElement = document.querySelector(".canvas-container");
     const h1Element = document.querySelector(".screen-text");
-
     // Add a class to the hero element to start the animation
     heroElement && heroElement.classList.toggle("bg-black");
-
     // Remove the "glow" class from the h1 element
     h1Element && h1Element.classList.toggle("flickering");
+    h1Element && h1Element!.parentElement!.classList.add("pointer-events-none");
+
+    setTimeout(() => {
+      setIsRunning(!isRunning);
+      canvasContainerElement && canvasContainerElement.classList.add("in");
+    }, 5000);
+
+    gsap
+      .to("#screen-text", {
+        duration: 2,
+        text: `thank you for coming`,
+        delay: 1,
+      })
+      .then(() => {
+        gsap.to("#screen-text", {
+          duration: 1,
+          opacity: 0,
+        });
+      });
   };
 
   return (
@@ -48,19 +70,21 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="relative bg-primary">
-        <div className="bg-hero bg-cover bg-no-repeat bg-center snap-y">
-          <div className="absolute h-screen w-screen">
-            <Dot3D isRunning={isRunning} />
-          </div>
-          <section
-            onClick={handleClick}
-            className="container relative w-full h-screen mx-auto p-[4rem] z-1 flex justify-center"
-          >
-            <h1 className={`${bungee.className} glow screen-text`}>
-              Click to start
-            </h1>
-          </section>
+        <div className="bg-hero bg-cover bg-no-repeat bg-center snap-y absolute w-screen h-screen"></div>
+        <div className="absolute h-screen w-screen overflow-hidden">
+          <Dot3D isRunning={isRunning} />
         </div>
+        <section
+          onClick={handleClick}
+          className="container relative w-full h-screen mx-auto p-[4rem] z-1 flex justify-center"
+        >
+          <h1
+            id="screen-text"
+            className={`${bungee.className} glow screen-text`}
+          >
+            Click to start
+          </h1>
+        </section>
       </div>
     </>
   );

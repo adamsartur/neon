@@ -108,7 +108,7 @@ a {
 }
 
 .flickering {
-  animation: flicker 1s ease-in-out;
+  animation: flicker 1s ease-in-out forwards;
 }
 
 @keyframes flicker {
@@ -142,6 +142,12 @@ a {
     text-shadow: 0 0 5px #fff, 0 0 40px #ff4da6, 0 0 80px #ff4da6,
       0 0 120px #ff4da6, 0 0 160px #ff4da6, 0 0 200px #ff4da6, 0 0 240px #ff4da6;
   }
+  /* 91% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  } */
 }
 @keyframes intro {
   0% {
@@ -574,11 +580,54 @@ a {
   @apply text-6xl text-white text-center;
 }
 
-.bg-black {
-  animation: lightOn 2s forwards;
+@keyframes malfunction {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
-.bg-hero.bg-black {
-  animation: lightOff 2s forwards;
+
+.bg-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: black;
+  opacity: 0;
+  pointer-events: none; /* This allows you to interact with the content below the overlay */
+}
+
+.bg-hero.bg-black::before {
+  animation: malfunction 2s ease-in-out forwards;
+}
+.canvas-container {
+  opacity: 0;
+  transform: scale(1.1);
+  overflow: hidden;
+  max-width: 100%;
+  max-height: 100vh;
+  transition: opacity 1s ease-in, transform 1s ease-in;
+}
+
+.canvas-container.in {
+  opacity: 1;
+  transform: scale(1);
 }
 
 @keyframes lightOff {
