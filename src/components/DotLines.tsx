@@ -4,78 +4,8 @@ import { gsap } from "gsap";
 import { SimplexNoise } from "three/examples/jsm/math/SimplexNoise";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils";
 import { MathUtils } from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-
-const randomRange = (min: number, max: number): number => {
-  return Math.random() * (max - min) + min;
-};
-
-function generateNoiseTexture(size: number, resolution: number) {
-  const noiseSize = size * resolution;
-  const data = new Uint8Array(noiseSize);
-  const noise = new SimplexNoise();
-
-  for (let i = 0; i < noiseSize; i++) {
-    const x = i % size;
-    const y = Math.floor(i / size);
-    const val = noise.noise(x / resolution, y / resolution);
-    data[i] = (val + 1) * 128;
-  }
-
-  const texture = new THREE.DataTexture(
-    data,
-    size,
-    size,
-    THREE.LuminanceFormat
-  );
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-
-  return texture;
-}
-
-const auroraVertexShader = `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const auroraFragmentShader = `
-  uniform float time;
-  uniform sampler2D noiseTexture;
-
-  varying vec2 vUv;
-
-  vec3 getColor(float intensity) {
-    vec3 color = vec3(0.0);
-    color.r = smoothstep(0.7, 1.0, intensity);
-    color.g = smoothstep(0.4, 0.7, intensity);
-    color.b = smoothstep(0.0, 0.4, intensity);
-    return color;
-  }
-
-  void main() {
-    float yOffset = time * 0.02;
-    float noise = texture2D(noiseTexture, vUv + vec2(0.0, yOffset)).r;
-    float intensity = pow(noise * 2.0, 2.0);
-    vec3 color = getColor(intensity) * intensity;
-    gl_FragColor = vec4(color, 1.0);
-  }
-`;
-
-function createAuroraGeometry() {
-  const planeGeometry = new THREE.PlaneGeometry(200, 200, 100, 100);
-  const planeGeometries = [];
-
-  for (let i = 0; i < 10; i++) {
-    const geometry = planeGeometry.clone();
-    geometry.translate(0, i * 0.05, 0);
-    planeGeometries.push(geometry);
-  }
-
-  return BufferGeometryUtils.mergeBufferGeometries(planeGeometries);
-}
+import { createGlassSquares } from "./GlassSquare";
+import { randomRange } from "@/utils/utils";
 
 interface Dot3DProps {
   isRunning: boolean;
@@ -84,6 +14,7 @@ interface Dot3DProps {
 const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
+  const hoveredSquare = useRef<THREE.Mesh | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -94,6 +25,30 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, width / height, 1, 1000);
 
+    // Create a raycaster instance
+    const raycaster = new THREE.Raycaster();
+    // Create a mouse instance
+    const mouse = new THREE.Vector2();
+
+    function handleClick(event: MouseEvent) {
+      event.preventDefault();
+
+      // Calculate mouse position in normalized device coordinates (-1 to +1) for both components
+      mouse.x = (event.clientX / width) * 2 - 1;
+      mouse.y = -(event.clientY / height) * 2 + 1;
+
+      // Update the picking ray with the camera and mouse position
+      raycaster.setFromCamera(mouse, camera);
+
+      // Calculate objects intersecting the picking ray
+      const intersects = raycaster.intersectObjects(glassSquares);
+
+      // Check if any glass square was clicked and log a message
+      if (intersects.length > 0) {
+        console.log("Clicked on a glass square!");
+      }
+    }
+
     const renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize(width, height);
     let position = { x: 0, y: 0, z: 5 };
@@ -103,9 +58,6 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
       position.y,
       position.z
     );
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enablePan = true; // Allow panning
-    controls.enableZoom = false; // Disable zooming
 
     const aspectRatio = width / height;
     const viewWidth =
@@ -116,6 +68,55 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
 
     // Initialize the camera direction vector
     const cameraDirection = new THREE.Vector3(0, 0, -1);
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (event.buttons !== 1) return; // Only allow the left mouse button for dragging
+
+      const deltaX = event.movementX;
+      const deltaY = event.movementY;
+
+      // Update the camera rotation based on the mouse movement
+      camera.rotation.y -= deltaX * 0.005;
+      camera.rotation.x -= deltaY * 0.005;
+      camera.rotation.x = Math.max(
+        Math.min(camera.rotation.x, Math.PI / 2),
+        -Math.PI / 2
+      );
+    };
+
+    function handleHoveredSquare(event: MouseEvent) {
+      event.preventDefault();
+
+      // Calculate mouse position in normalized device coordinates (-1 to +1) for both components
+      mouse.x = (event.clientX / width) * 2 - 1;
+      mouse.y = -(event.clientY / height) * 2 + 1;
+
+      // Update the picking ray with the camera and mouse position
+      raycaster.setFromCamera(mouse, camera);
+
+      // Calculate objects intersecting the picking ray
+      const intersects = raycaster.intersectObjects(glassSquares);
+
+      // Reset the previous square if there's any
+      if (hoveredSquare.current) {
+        hoveredSquare.current.material.emissive.setHex(
+          hoveredSquare.current.currentHex
+        );
+        hoveredSquare.current = null;
+      }
+
+      // Check if any glass square is hovered
+      if (intersects.length > 0) {
+        hoveredSquare.current = intersects[0].object as THREE.Mesh;
+
+        // Store the current emissive color
+        hoveredSquare.current.currentHex =
+          hoveredSquare.current.material.emissive.getHex();
+
+        // Set a new emissive color to make the square shine
+        hoveredSquare.current.material.emissive.setHex(0xffa500);
+      }
+    }
 
     // Add event listeners for keyboard input
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -129,11 +130,6 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
             cameraPosition.y,
             cameraPosition.z
           );
-          camera.lookAt(
-            cameraPosition.x + cameraDirection.x,
-            cameraPosition.y + cameraDirection.y,
-            cameraPosition.z + cameraDirection.z
-          );
 
           break;
         case "KeyA":
@@ -144,11 +140,6 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
             cameraPosition.x,
             cameraPosition.y,
             cameraPosition.z
-          );
-          camera.lookAt(
-            cameraPosition.x + cameraDirection.x,
-            cameraPosition.y + cameraDirection.y,
-            cameraPosition.z + cameraDirection.z
           );
 
           break;
@@ -161,11 +152,6 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
             cameraPosition.y,
             cameraPosition.z
           );
-          camera.lookAt(
-            cameraPosition.x + cameraDirection.x,
-            cameraPosition.y + cameraDirection.y,
-            cameraPosition.z + cameraDirection.z
-          );
 
           break;
         case "KeyD":
@@ -176,11 +162,6 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
             cameraPosition.x,
             cameraPosition.y,
             cameraPosition.z
-          );
-          camera.lookAt(
-            cameraPosition.x + cameraDirection.x,
-            cameraPosition.y + cameraDirection.y,
-            cameraPosition.z + cameraDirection.z
           );
 
           break;
@@ -208,61 +189,22 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
     scene.add(ambientLight);
 
     // Create a glass square
-    const glassSquares: THREE.Mesh[] = [];
     const numGlassSquares = 30;
     const glassSquareSize = 5;
-    const glassSquareGeometry = new THREE.BoxGeometry(
-      0.5,
+    const glassSquares = createGlassSquares(
+      numGlassSquares,
       glassSquareSize,
-      0.01
+      viewWidth,
+      viewHeight,
+      camera.position.z
     );
-    const glassSquareMaterial = new THREE.MeshPhongMaterial({
-      color: 0x00ff00, // Changed to green
-      transparent: true,
-      opacity: 0.1,
-      reflectivity: 0.9,
-    });
-    for (let i = 0; i < numGlassSquares; i++) {
-      const glassSquare = new THREE.Mesh(
-        glassSquareGeometry,
-        glassSquareMaterial
-      );
-      glassSquare.position.set(
-        randomRange(-viewWidth * 2, viewWidth * 2),
-        -viewHeight / 2,
-        randomRange(camera.position.z - 1, camera.position.z - 40)
-      );
+    glassSquares.forEach((glassSquare) => {
       scene.add(glassSquare);
-      glassSquares.push(glassSquare);
-    }
-
-    // Generate the noise texture
-    const noiseTexture = generateNoiseTexture(256, 1);
-
-    // Create the aurora material
-    const auroraMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        noiseTexture: { value: noiseTexture },
-      },
-      vertexShader: auroraVertexShader,
-      fragmentShader: auroraFragmentShader,
-      transparent: true,
-      side: THREE.DoubleSide,
     });
 
-    // Create the aurora mesh
-    const auroraGeometry = createAuroraGeometry();
-    const aurora = new THREE.Mesh(auroraGeometry, auroraMaterial);
-    aurora.position.set(0, 0, -25);
-    aurora.rotation.x = Math.PI / 2;
-    //scene.add(aurora);
-    //camera.position.set(1, 0, 5);
     // Animate the glass squares
     const animateGlassSquares = () => {
       if (!isRunning) return;
-
-      auroraMaterial.uniforms.time.value += 0.01;
 
       glassSquares.forEach((glassSquare, index) => {
         glassSquare.position.y += 0.02 * ((index % 13) + 1); // Vary the speed slightly based on the index
@@ -277,7 +219,12 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
           );
         }
       });
-
+      if (hoveredSquare) {
+        if (hoveredSquare.current) {
+          hoveredSquare.current.rotation.x += 0.05;
+          hoveredSquare.current.rotation.y += 0.05;
+        }
+      }
       renderer.render(scene, camera);
       animationRef.current = requestAnimationFrame(animateGlassSquares);
     };
@@ -326,12 +273,17 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
     const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const material = new THREE.MeshBasicMaterial({ color: 0xe60073 });
 
+    renderer.domElement.addEventListener("mousemove", handleHoveredSquare);
+    renderer.domElement.addEventListener("mousemove", handleMouseMove);
+    renderer.domElement.addEventListener("click", handleClick);
     // Clean up event listeners when component unmounts
     return () => {
       renderer.dispose();
-      controls.dispose();
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
+      renderer.domElement.removeEventListener("mousemove", handleMouseMove); // Clean up the mousemove event listener
+      renderer.domElement.removeEventListener("click", handleClick);
+      renderer.domElement.removeEventListener("mousemove", handleHoveredSquare);
 
       if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
