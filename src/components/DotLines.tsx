@@ -10,11 +10,13 @@ import { randomRange } from "@/utils/utils";
 interface Dot3DProps {
   isRunning: boolean;
 }
-
+type CustomMesh = THREE.Mesh & {
+  currentHex?: number;
+};
 const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
-  const hoveredSquare = useRef<THREE.Mesh | null>(null);
+  const hoveredSquare = useRef<CustomMesh | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -99,22 +101,46 @@ const Dot3D: React.FC<Dot3DProps> = ({ isRunning }) => {
 
       // Reset the previous square if there's any
       if (hoveredSquare.current) {
-        hoveredSquare.current.material.emissive.setHex(
-          hoveredSquare.current.currentHex
-        );
+        const currentMaterial = hoveredSquare.current.material;
+        if (Array.isArray(currentMaterial)) {
+          currentMaterial.forEach((material) => {
+            if (material instanceof THREE.MeshStandardMaterial) {
+              material.emissive.setHex(
+                hoveredSquare.current!.currentHex ?? 0x000000
+              );
+            }
+          });
+        } else if (currentMaterial instanceof THREE.MeshStandardMaterial) {
+          currentMaterial.emissive.setHex(
+            hoveredSquare.current!.currentHex ?? 0x000000
+          );
+        }
         hoveredSquare.current = null;
       }
 
       // Check if any glass square is hovered
       if (intersects.length > 0) {
-        hoveredSquare.current = intersects[0].object as THREE.Mesh;
+        hoveredSquare.current = intersects[0].object as CustomMesh;
 
-        // Store the current emissive color
-        hoveredSquare.current.currentHex =
-          hoveredSquare.current.material.emissive.getHex();
+        // Add the type assertion for the material
+        const currentMaterial = hoveredSquare.current.material;
+        if (Array.isArray(currentMaterial)) {
+          currentMaterial.forEach((material) => {
+            if (material instanceof THREE.MeshStandardMaterial) {
+              // Store the current emissive color
+              hoveredSquare.current!.currentHex = material.emissive.getHex();
 
-        // Set a new emissive color to make the square shine
-        hoveredSquare.current.material.emissive.setHex(0xffa500);
+              // Set a new emissive color to make the square shine
+              material.emissive.setHex(0xffa500);
+            }
+          });
+        } else if (currentMaterial instanceof THREE.MeshStandardMaterial) {
+          // Store the current emissive color
+          hoveredSquare.current.currentHex = currentMaterial.emissive.getHex();
+
+          // Set a new emissive color to make the square shine
+          currentMaterial.emissive.setHex(0xffa500);
+        }
       }
     }
 
